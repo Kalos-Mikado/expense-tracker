@@ -1,0 +1,23 @@
+import { Wallet, ArrowDownLeft, ArrowUpRight } from 'lucide-react'
+import { useLedger } from '../LedgerContext.jsx'
+import { formatMoney, formatMonth } from '../ledger.js'
+
+const chartColors = ['#375ce2', '#17a4a1', '#f4a64b', '#8e72d7', '#ea718b', '#718399', '#307faf', '#52657b']
+
+export default function OverviewPage() {
+  const { month, inPeriod, totals, breakdown, savingRate } = useLedger()
+  return <>
+      <section className="summary-grid" aria-label={`ยอดสรุป ${formatMonth(month)}`}>
+        <article className="balance-card"><div className="flex items-center justify-between"><span className="text-sm text-blue-100">คงเหลือในช่วงที่เลือก</span><span className="summary-icon bg-white/10"><Wallet size={21} /></span></div><p data-testid="balance" className="balance-number">{formatMoney(totals.balance)}</p><div className="balance-footer"><span>{formatMonth(month)}</span><span className="text-blue-100">{inPeriod.length} รายการ</span></div></article>
+        <article className="summary-card"><div className="flex items-center justify-between"><span className="text-sm text-slate-500">รายรับทั้งหมด</span><span className="summary-icon bg-emerald-50 text-emerald-600"><ArrowDownLeft size={23} /></span></div><p data-testid="income" className="summary-number text-emerald-700">{formatMoney(totals.income)}</p><div className="summary-footer"><span className="text-emerald-700">เงินที่เข้ามา</span><span>{inPeriod.filter(record => record.type === 'income').length} รายการ</span></div></article>
+        <article className="summary-card"><div className="flex items-center justify-between"><span className="text-sm text-slate-500">รายจ่ายทั้งหมด</span><span className="summary-icon bg-rose-50 text-rose-500"><ArrowUpRight size={23} /></span></div><p data-testid="expense" className="summary-number text-rose-600">{formatMoney(totals.expense)}</p><div className="summary-footer"><span className="text-rose-600">เงินที่ใช้ไป</span><span>{inPeriod.filter(record => record.type === 'expense').length} รายการ</span></div></article>
+      </section>
+<div className="overview-grid">
+          <section className="panel spending-panel" aria-labelledby="spending-title">
+            <div className="panel-heading"><div><h2 id="spending-title">ใช้จ่ายไปกับอะไร</h2><p className="mt-1 text-sm text-slate-500">สัดส่วนรายจ่ายตามหมวดหมู่</p></div><span className="period-tag">{formatMonth(month)}</span></div>
+            {breakdown.length ? <div className="breakdown-layout"><div className="donut" role="img" aria-label={breakdown.map(item => `${item.category} ${formatMoney(item.amount)}`).join(', ')} style={{ background: `conic-gradient(${breakdown.map((item, index) => { const before = breakdown.slice(0, index).reduce((sum, entry) => sum + entry.amount, 0) / totals.expense * 100; return `${chartColors[index % chartColors.length]} ${before}% ${before + item.amount / totals.expense * 100}%` }).join(', ')})` }}><div className="donut-hole"><span className="text-xs text-slate-500">รวมรายจ่าย</span><strong className="mt-1 block text-lg">{formatMoney(totals.expense)}</strong></div></div><ul className="category-legend">{breakdown.map((item, index) => <li key={item.category}><span className="legend-name"><span className="legend-dot" style={{ background: chartColors[index % chartColors.length] }} />{item.category}</span><span className="text-right"><strong className="block text-sm font-semibold tabular-nums">{formatMoney(item.amount)}</strong><span className="text-xs text-slate-500">{(item.amount / totals.expense * 100).toFixed(1)}%</span></span></li>)}</ul></div> : <div className="chart-empty"><div className="empty-donut"><Wallet size={26} /></div><div><p className="font-semibold">ยังไม่มีรายจ่ายในช่วงนี้</p><p className="mt-1 text-sm text-slate-500">เพิ่มรายจ่ายแรกเพื่อดูสัดส่วนการใช้เงิน</p></div></div>}
+          </section>
+          <section className="saving-panel"><div className="flex items-center gap-2 text-sm font-semibold"><span className="rounded-lg bg-white p-2"><Wallet size={17} /></span>เหลือเก็บเท่าไร</div><div className="mt-4 flex items-end justify-between"><p className="text-2xl font-bold">{savingRate === null ? '—' : `${savingRate}%`}</p><span className="mb-1 text-xs text-slate-500">ของรายรับในช่วงนี้</span></div><div className="savings-track"><div style={{ width: `${Math.max(0, Math.min(savingRate || 0, 100))}%` }} /></div><p className="mt-3 text-sm leading-6 text-slate-600">{savingRate === null ? 'เพิ่มรายรับเพื่อดูสัดส่วนเงินที่เหลือเก็บ' : totals.balance < 0 ? 'รายจ่ายมากกว่ารายรับในช่วงที่เลือก' : `หลังหักรายจ่าย เหลือ ${formatMoney(totals.balance)}`}</p></section>
+</div>
+</>
+}
